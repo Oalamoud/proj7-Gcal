@@ -8,9 +8,9 @@
 # Configuration options
 #
 # On most platforms: 
-#PYVENV = pyvenv-3.4
+PYVENV = pyvenv-3.5
 # On ix (with bug in ubuntu)
-PYVENV = pyvenv-3.4 --without-pip
+#PYVENV = pyvenv-3.5 --without-pip
 
 
 #
@@ -37,13 +37,7 @@ all:
 install:
 	# pyvenv-3.4 env ### BUGGY on ix
 	$(PYVENV)  env
-	make env/bin/pip
 	(.  env/bin/activate; pip install -r requirements.txt)
-
-env/bin/pip: env/bin/activate
-	echo ""
-	(.  env/bin/activate; curl https://bootstrap.pypa.io/get-pip.py | python)
-
 
 dist:
 	pip freeze >requirements.txt
