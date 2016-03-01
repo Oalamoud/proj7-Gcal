@@ -86,7 +86,7 @@
     prefer down then across). 
     -->
     {% if session.calendars is defined  %}
-<form action="/choose" method="post">
+<form action="/busy" method="post">
   <div class="row">
   {% for cal in session.calendars if cal.selected %}
           <div class="col-md-4">
@@ -97,7 +97,7 @@
          {% endif %}
   {% endfor %}
   </div>
-  <input type="submit" value="choose">
+  <input type="submit" value="continue">
 </form>
 
   {% endif %}
