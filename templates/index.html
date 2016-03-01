@@ -86,7 +86,7 @@
     prefer down then across). 
     -->
     {% if session.calendars is defined  %}
-<form action="choose" method="POST">
+<form action="/choose" method="post">
   <div class="row">
   {% for cal in session.calendars if cal.selected %}
           <div class="col-md-4">
