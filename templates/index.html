@@ -41,7 +41,7 @@
     prefer down then across). 
     -->
     {% if session.calendars is defined  %}
-<form action="/_calc_busy_time" method="GET">
+<form action="_calc_busy_time" method="post">
   <div class="row">
   {% for cal in session.calendars if cal.selected %}
           <div class="col-md-4">
@@ -55,7 +55,17 @@
   </div>
   <input type="submit" value="Get busy time">
 </form>
-
+  <div class="row">
+  {% for event in session.events %}
+          <div class="col-md-4">
+              <input type="checkbox" value="" name="calendar" checked> {{ event.summary }}
+              
+          </div>
+         {% if loop.index is divisibleby 3 %}
+          </div> <div class="row">
+         {% endif %}
+  {% endfor %}
+  </div>
   {% endif %}
 {% endblock %}
 

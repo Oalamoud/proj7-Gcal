@@ -199,6 +199,7 @@ def setrange():
     app.logger.debug("Setrange parsed {} - {}  dates as {} - {}".format(
       daterange_parts[0], daterange_parts[1], 
       flask.session['begin_date'], flask.session['end_date']))
+    app.logger.debug(flask.session['begin_date'])
     return flask.redirect(flask.url_for("choose"))
 
 ####
@@ -328,19 +329,38 @@ def cal_sort_key( cal ):
 #
 ################
 
-@app.route("/_calc_busy_time")
+@app.route("/_calc_busy_time",methods=['post'])
 def _calc_busy_time():
-    flask.session['selected_cal']= request.gitlist('calendar')
-    events = get_busy_time()
-    return 1
+    app.logger.debug("Checking credentials for Google calendar access")
+    credentials = valid_credentials()
+    if not credentials:
+      app.logger.debug("Redirecting to authorization")
+      return flask.redirect(flask.url_for('oauth2callback'))
+
+    gcal_service = get_gcal_service(credentials)
+    flask.session['selected_cal']= request.form.getlist('calendar')
+    flask.session['events'] = get_busy_time(gcal_service)
+    app.logger.debug(flask.session['events'])
+    return render_template('index.html')
 
 def get_busy_time(service):
-  for cal in flask.session['selected_cal']:
-    eventsResult = service.events().list(
-       calendarId=cal, timeMin=from_date, timeMax=to_time,
-       maxResults=100, singleEvents=True,
-       orderBy='startTime').execute()
-  return eventsResult.get('items', [])
+    app.logger.debug(flask.session['begin_date'])
+    from_date = flask.session['begin_date']
+    to_time = flask.session['end_date']
+    app.logger.debug(flask.session['calendars'])
+    events=list()
+    for cal in flask.session['calendars']:
+        app.logger.debug(cal["summary"])
+        eventsResult = service.events().list(
+         calendarId=cal["id"], 
+         timeMin=from_date, 
+         timeMax=to_time,
+         maxResults=100, singleEvents=True,
+         orderBy='startTime').execute()
+        app.logger.debug(eventsResult)
+        events.extend(eventsResult.get('items', []))
+    app.logger.debug(events)
+    return events
 
 #################
 #
