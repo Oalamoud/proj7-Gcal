@@ -1,0 +1,54 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html lang="en"> <head>
+    {% block head %}
+<title>Appointments</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" type="text/css"
+     href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.css"
+/>
+
+<link rel="stylesheet" type="text/css"
+ href="/static/js/node_modules/bootstrap-daterangepicker/daterangepicker.css"
+/>
+
+<link rel="stylesheet" type="text/css"
+    href="/static/css/busy.css"
+/>
+
+<!-- jquery from a content distribution network; probably cached -->
+<script type="text/javascript"
+     src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js">
+</script>
+
+
+<!-- The rest of our javascript dependencies are bundled and -->
+<!-- 'minified' by 'browserify'  -->
+<script type="text/javascript" 
+   src="/static/js/busy.min.js">
+</script>
+
+    {% endblock %}
+</head>
+
+<body>
+<div class="container">
+    <!--
+    If there are any warnings or other messages from a prior action,
+    they appear above the rest of the content, just until the next 
+    action.
+  -->
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+    {% block content %}{% endblock %}
+      </div>  <!-- container (for bootstrap) -->
+  </body> </html>

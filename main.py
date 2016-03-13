@@ -63,6 +63,7 @@ def choose():
 
 @app.route("/busy")
 def busy():
+    
     return render_template('index.html')
 
 ####
@@ -320,6 +321,26 @@ def cal_sort_key( cal ):
        primary_key = "X"
     return (primary_key, selected_key, cal["summary"])
 
+
+################
+#
+#  Busytime code starts here 
+#
+################
+
+@app.route("/_calc_busy_time")
+def _calc_busy_time():
+    flask.session['selected_cal']= request.gitlist('calendar')
+    events = get_busy_time()
+    return 1
+
+def get_busy_time(service):
+  for cal in flask.session['selected_cal']:
+    eventsResult = service.events().list(
+       calendarId=cal, timeMin=from_date, timeMax=to_time,
+       maxResults=100, singleEvents=True,
+       orderBy='startTime').execute()
+  return eventsResult.get('items', [])
 
 #################
 #
