@@ -2,6 +2,7 @@ import flask
 from flask import render_template
 from flask import request
 from flask import url_for
+from flask import jsonify
 import uuid
 
 import json
@@ -199,7 +200,6 @@ def setrange():
     app.logger.debug("Setrange parsed {} - {}  dates as {} - {}".format(
       daterange_parts[0], daterange_parts[1], 
       flask.session['begin_date'], flask.session['end_date']))
-    app.logger.debug(flask.session['begin_date'])
     return flask.redirect(flask.url_for("choose"))
 
 ####
@@ -225,6 +225,8 @@ def init_session_values():
     # Default time span each day, 8 to 5
     flask.session["begin_time"] = interpret_time("9am")
     flask.session["end_time"] = interpret_time("5pm")
+    app.logger.debug(flask.session["begin_time"] )
+    app.logger.debug(flask.session["end_time"] )
 
 def interpret_time( text ):
     """
@@ -264,6 +266,13 @@ def next_day(isotext):
     """
     as_arrow = arrow.get(isotext)
     return as_arrow.replace(days=+1).isoformat()
+
+def end_of_day(isotext):
+    """
+    ISO date + 1 day (used in query to Google calendar)
+    """
+    as_arrow = arrow.get(isotext)
+    return as_arrow.replace(days=+1,seconds=-1).isoformat()
 
 ####
 #
@@ -338,28 +347,44 @@ def _calc_busy_time():
       return flask.redirect(flask.url_for('oauth2callback'))
 
     gcal_service = get_gcal_service(credentials)
-    flask.session['selected_cal']= request.form.getlist('calendar')
+    flask.session['selected_cal']= request.form.getlist('calendars')
+    app.logger.debug(flask.session['selected_cal'])
     flask.session['events'] = get_busy_time(gcal_service)
     app.logger.debug(flask.session['events'])
     return render_template('index.html')
+#    return jsonify(result=flask.session[events]) 
 
 def get_busy_time(service):
     app.logger.debug(flask.session['begin_date'])
     from_date = flask.session['begin_date']
-    to_time = flask.session['end_date']
-    app.logger.debug(flask.session['calendars'])
+    to_time = end_of_day(flask.session['end_date'])
+    start_time=format_arrow_time(flask.session['begin_time'])
+    end_time=format_arrow_time(flask.session['end_time'])
+#    app.logger.debug(flask.session['calendars'])
     events=list()
-    for cal in flask.session['calendars']:
-        app.logger.debug(cal["summary"])
+    for cal in flask.session['selected_cal']:
+
         eventsResult = service.events().list(
-         calendarId=cal["id"], 
+         calendarId=cal, 
          timeMin=from_date, 
          timeMax=to_time,
          maxResults=100, singleEvents=True,
          orderBy='startTime').execute()
         app.logger.debug(eventsResult)
         events.extend(eventsResult.get('items', []))
-    app.logger.debug(events)
+    for event in events:
+#        app.logger.debug(event)
+        event_start_time=format_arrow_time(event['start']['dateTime'])
+        event_end_time=format_arrow_time(event['end']['dateTime'])
+        if event_start_time > end_time:
+            app.logger.debug("too late event starts: "+event_start_time)
+            events.remove(event)
+        elif event_end_time < start_time:
+            events.remove(event)
+            app.logger.debug("too early event ends: "+event_end_time)
+        elif 'transparency' in event and event['transparency']=="transparent":
+            app.logger.debug('Event is not busy')
+            events.remove(event)
     return events
 
 #################

@@ -14,6 +14,7 @@
      class="pull-down"
      style="background: #fff; cursor: pointer; padding: 5px 10px;
      border: 1px solid #ccc; width: 12em" >
+<!--
   <script type="text/javascript">
   $(function() {
   $('input[name="daterange"]').daterangepicker(
@@ -30,6 +31,7 @@
        );
     });
   </script>
+-->
 
 <br /><input type="submit" value="Choose" />
 </form>
@@ -40,12 +42,12 @@
     shown in each row (but the order is across then down; I would
     prefer down then across). 
     -->
-    {% if session.calendars is defined  %}
+    {% if session.calendars is defined %}
 <form action="_calc_busy_time" method="post">
   <div class="row">
   {% for cal in session.calendars if cal.selected %}
           <div class="col-md-4">
-              <input type="checkbox" value="{{ cal.summary }}" name="calendar" checked> {{ cal.summary }}
+              <input type="checkbox" value="{{ cal.id }}" name="calendars" > {{ cal.summary }}
               
           </div>
          {% if loop.index is divisibleby 3 %}
@@ -53,19 +55,61 @@
          {% endif %}
   {% endfor %}
   </div>
+    
+<!--
+    <script type="text/javascript">
+    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    var selected_calendars=[]
+    $("input[name='calendars']").change(function() {
+   if ($(this).is(":checked")){
+       selected_calendars.push($(this).val());
+       alert($(this).val()+"\n"+selected_calendars);
+       
+   } else {
+       selected_calendars.splice(
+           selected_calendars.indexOf($(this).val()),1
+                                  );
+       alert(selected_calendars);
+   }
+   $.getJSON(
+       $SCRIPT_ROOT+"/_calc_busy_time",{
+           calendars:selected_calendars
+       },
+        function(data){
+            $('#result').html("<div class='row'> <ul>");
+            var i =1;
+            for( event in data.result ){
+            $('#result').append("<li>"+parse_events(event)+"</li>");
+                if (i%3==0){
+                    $('#result').append("</div> <div class='row'>");
+                }
+            }
+            $('#result').append("</ul></div>");
+        });
+});
+function parse_events(data){
+    return data['summary']+", "+data['start']+"-"+['dateTime']+data['start']['dateTime'];
+} 
+    </script>
+-->
   <input type="submit" value="Get busy time">
 </form>
-  <div class="row">
+{% endif %}
+{% if session.events is  defined %}
+<div id="result">
+  <div class="row"><ul>
   {% for event in session.events %}
           <div class="col-md-4">
-              <input type="checkbox" value="" name="calendar" checked> {{ event.summary }}
+               <li>{{ event.summary }}, {{event.start.dateTime|fmtdate}} {{event.start.dateTime|fmttime}} - {{event.end.dateTime|fmtdate}} {{event.end.dateTime|fmttime}}</li>
               
           </div>
          {% if loop.index is divisibleby 3 %}
           </div> <div class="row">
          {% endif %}
   {% endfor %}
+      </ul>
   </div>
-  {% endif %}
+    </div>
+    {% endif %}
 {% endblock %}
 
