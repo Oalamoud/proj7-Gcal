@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+{% block head %}
+  {{ super() }}
+{% endblock %}
+{% block content %}
+<h1>Meeting times</h1>
+<div class="row">
+<div class="col-md-2">
+<label>Meeting title:</label>
+</div>
+<div class="col-md-2">
+<input name="title" type="text">
+</div>
+</div>
+<div class="row">
+<div class="col-md-2">
+<label>Your name:</label>
+</div>
+<div class="col-md-2">
+<input name="name" type="text">
+</div>
+</div><br />
+<h2>Date range</h2>
+  <form action="/setrange" method="post">
+  <input type="text" name="daterange" size="12"
+    {% if session.daterange is defined %}
+         value="{{session.daterange}}"
+    {% endif %}
+     class="pull-down"
+     style="background: #fff; cursor: pointer; padding: 5px 10px;
+     border: 1px solid #ccc; width: 12em" >
+
+
+<br /><input type="submit" value="Choose" />
+</form>
+
+    <!--
+    Show the calendar list (if we have it).  This will need to be turned into
+    a form from which calendars can be picked. Up to three entries are
+    shown in each row (but the order is across then down; I would
+    prefer down then across). 
+    -->
+    {% if session.calendars is defined %}
+<form action="_calc_busy_time" method="post">
+  <div class="row">
+  {% for cal in session.calendars if cal.selected %}
+          <div class="col-md-4">
+              <input type="checkbox" value="{{ cal.id }}" name="calendars"{% if cal.id in session.selected_cal %}checked{% endif %} > {{ cal.summary }}
+              
+          </div>
+         {% if loop.index is divisibleby 3 %}
+          </div> <div class="row">
+         {% endif %}
+  {% endfor %}
+  </div>
+    
+
+  <input type="submit" value="Get busy time">
+</form>
+{% endif %}
+{% if session.events is  defined %}
+<div id="result">
+  <div class="row"><ul>
+  {% for event in session.events %}
+          <div class="col-md-4">
+               <li>{{ event.summary }}, {{event.start.dateTime|fmtdate}} {{event.start.dateTime|fmttime}} - {{event.end.dateTime|fmtdate}} {{event.end.dateTime|fmttime}}</li>
+              
+          </div>
+         {% if loop.index is divisibleby 3 %}
+          </div> <div class="row">
+         {% endif %}
+  {% endfor %}
+      </ul>
+  </div>
+    </div>
+    {% endif %}
+{% endblock %}
+

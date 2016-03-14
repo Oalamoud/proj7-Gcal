@@ -40,10 +40,12 @@ APPLICATION_NAME = 'MeetMe class project'
 @app.route("/")
 @app.route("/index")
 def index():
-  app.logger.debug("Entering index")
-  if 'begin_date' not in flask.session:
-    init_session_values()
-  return render_template('index.html')
+    app.logger.debug("Entering index")
+    if 'begin_date' not in flask.session:
+        init_session_values()
+    flask.session['current_page']='index.html'
+    flask.session['current_url']='index'
+    return render_template('index.html')
 
 @app.route("/choose")
 def choose():
@@ -60,12 +62,32 @@ def choose():
     gcal_service = get_gcal_service(credentials)
     app.logger.debug("Returned from get_gcal_service")
     flask.session['calendars'] = list_calendars(gcal_service)
-    return render_template('index.html')
+    return render_template(flask.session['current_page'])
 
-@app.route("/busy")
-def busy():
-    
-    return render_template('index.html')
+
+
+@app.route("/meeting/create")
+def create():
+    app.logger.debug("Entering create")
+    if 'begin_date' not in flask.session:
+        init_session_values()
+    flask.session['current_page']='create.html'
+    flask.session['current_url']='/meeting/create'
+    return render_template('create.html')
+
+@app.route("/meeting/participate/<id>")
+def add_particepant(id):
+    app.logger.debug("Entering participate")
+    if 'begin_date' not in flask.session:
+        init_session_values()
+    flask.session['current_page']='edit.html'
+    flask.session['current_url']='/meeting/participate/'+id
+    return render_template('add_particepant.html')
+
+
+@app.route("/test")
+def test():
+    return render_template('create.html')
 
 ####
 #
@@ -350,8 +372,7 @@ def _calc_busy_time():
     flask.session['selected_cal']= request.form.getlist('calendars')
     app.logger.debug(flask.session['selected_cal'])
     flask.session['events'] = get_busy_time(gcal_service)
-    app.logger.debug(flask.session['events'])
-    return render_template('index.html')
+    return flask.redirect(flask.session['current_url'])
 #    return jsonify(result=flask.session[events]) 
 
 def get_busy_time(service):
@@ -360,8 +381,8 @@ def get_busy_time(service):
     to_time = end_of_day(flask.session['end_date'])
     start_time=format_arrow_time(flask.session['begin_time'])
     end_time=format_arrow_time(flask.session['end_time'])
-#    app.logger.debug(flask.session['calendars'])
     events=list()
+    
     for cal in flask.session['selected_cal']:
 
         eventsResult = service.events().list(
@@ -370,12 +391,12 @@ def get_busy_time(service):
          timeMax=to_time,
          maxResults=100, singleEvents=True,
          orderBy='startTime').execute()
-        app.logger.debug(eventsResult)
         events.extend(eventsResult.get('items', []))
+#    app.logger.debug(events)
     for event in events:
-#        app.logger.debug(event)
         event_start_time=format_arrow_time(event['start']['dateTime'])
         event_end_time=format_arrow_time(event['end']['dateTime'])
+        app.logger.debug("Rules start time {} - end time {} | {} start time {} -  end time {}".format(start_time,end_time,event["summary"],event_start_time,event_end_time))
         if event_start_time > end_time:
             app.logger.debug("too late event starts: "+event_start_time)
             events.remove(event)
@@ -383,7 +404,7 @@ def get_busy_time(service):
             events.remove(event)
             app.logger.debug("too early event ends: "+event_end_time)
         elif 'transparency' in event and event['transparency']=="transparent":
-            app.logger.debug('Event is not busy')
+            app.logger.debug('Event is Available')
             events.remove(event)
     return events
 
